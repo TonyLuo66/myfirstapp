@@ -2,6 +2,11 @@
 
 這是一個以 .NET 10 撰寫的容器化 Web API 範例，已整理成分層架構，並補上 Dapper、Repository、SQL Server、appsettings 分層設定、Secret 設計與 launchSettings，適合拿來練習 Docker 打包、HTTP 健康檢查、環境變數設定與對外部署。
 
+## 文件導覽
+
+- Render 部署說明: docs/RENDER_DEPLOYMENT.md
+- 正式交接發布說明: docs/RELEASE_HANDOVER.md
+
 ## 功能概覽
 
 - 提供首頁、Swagger、健康檢查與 JSON 狀態頁面
@@ -24,6 +29,8 @@
 | DB_CONNECTION_STRING | 覆寫應用資料庫連線字串 | Server=(localdb)\MSSQLLocalDB;Database=myfirstapp;... |
 | DB_MASTER_CONNECTION_STRING | 覆寫 master 資料庫連線字串 | Server=(localdb)\MSSQLLocalDB;Database=master;... |
 | DATABASE_SEED_ON_STARTUP | 啟動時是否建立示範資料 | true |
+| DATABASE_INITIALIZE_ON_STARTUP | 啟動時是否執行資料庫初始化流程 | true |
+| DATABASE_CREATE_IF_MISSING | 啟動時是否透過 master 連線執行 CREATE DATABASE | true |
 
 ## 設定來源順序
 
@@ -92,6 +99,8 @@ dotnet run --launch-profile myfirstapp-safe
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=.\SQLEXPRESS;Database=myfirstapp;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=True"
 dotnet user-secrets set "ConnectionStrings:MasterConnection" "Server=.\SQLEXPRESS;Database=master;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=True"
 dotnet user-secrets set "Database:SeedOnStartup" "true"
+dotnet user-secrets set "Database:InitializeOnStartup" "true"
+dotnet user-secrets set "Database:CreateDatabaseIfMissing" "true"
 ```
 
 設定完成後啟動專案：
@@ -228,6 +237,8 @@ user-secrets 範例：
 ```powershell
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=tcp:your-sql-host,1433;Database=myfirstapp;User ID=app_user;Password=***;Encrypt=True;TrustServerCertificate=False;MultipleActiveResultSets=True"
 dotnet user-secrets set "ConnectionStrings:MasterConnection" "Server=tcp:your-sql-host,1433;Database=master;User ID=app_admin;Password=***;Encrypt=True;TrustServerCertificate=False;MultipleActiveResultSets=True"
+dotnet user-secrets set "Database:InitializeOnStartup" "true"
+dotnet user-secrets set "Database:CreateDatabaseIfMissing" "false"
 ```
 
 若你要照本機 SQL Express 版本重做，請改用：
@@ -236,6 +247,8 @@ dotnet user-secrets set "ConnectionStrings:MasterConnection" "Server=tcp:your-sq
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=.\SQLEXPRESS;Database=myfirstapp;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=True"
 dotnet user-secrets set "ConnectionStrings:MasterConnection" "Server=.\SQLEXPRESS;Database=master;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=True"
 dotnet user-secrets set "Database:SeedOnStartup" "true"
+dotnet user-secrets set "Database:InitializeOnStartup" "true"
+dotnet user-secrets set "Database:CreateDatabaseIfMissing" "true"
 ```
 
 部署環境建議改用：
@@ -263,10 +276,30 @@ docker run --rm myfirstapp:local
 docker run --rm -p 8080:8080 myfirstapp:local
 ```
 
+如果只是驗證容器是否能啟動，不想在 Docker smoke test 連 SQL Server，可以暫時關閉初始化：
+
+```powershell
+docker run --rm -p 8080:8080 `
+  -e DATABASE_INITIALIZE_ON_STARTUP=false `
+  -e DB_CONNECTION_STRING="Server=tcp:placeholder,1433;Database=myfirstapp;User ID=demo;Password=demo;Encrypt=True;TrustServerCertificate=False;" `
+  myfirstapp:local
+```
+
 啟用 heartbeat：
 
 ```powershell
 docker run --rm -p 8080:8080 -e APP_MODE=service -e APP_ENVIRONMENT=test -e HEARTBEAT_SECONDS=5 myfirstapp:local
+```
+
+如果部署帳號沒有 `CREATE DATABASE` 權限，但資料庫已由 DBA 建好，可改成：
+
+```powershell
+docker run --rm -p 8080:8080 `
+  -e APP_MODE=service `
+  -e DB_CONNECTION_STRING="Server=tcp:<app-sql-host>,1433;Database=myfirstapp;User ID=<app_user>;Password=<password>;Encrypt=True;TrustServerCertificate=False;MultipleActiveResultSets=True" `
+  -e DATABASE_CREATE_IF_MISSING=false `
+  -e DATABASE_SEED_ON_STARTUP=false `
+  myfirstapp:local
 ```
 
 ## 部署提醒
@@ -296,6 +329,8 @@ docker run --rm -p 8080:8080 -e APP_MODE=service -e APP_ENVIRONMENT=test -e HEAR
 
 可依部署平台改成環境變數或 Secret：
 
+Render Environment 可直接貼上的最終清單：
+
 ```text
 ASPNETCORE_ENVIRONMENT=Production
 APP_MODE=service
@@ -304,7 +339,11 @@ HEARTBEAT_SECONDS=10
 DB_CONNECTION_STRING=Server=tcp:<your-sql-host>,1433;Database=myfirstapp;User ID=<app_user>;Password=<password>;Encrypt=True;TrustServerCertificate=False;MultipleActiveResultSets=True
 DB_MASTER_CONNECTION_STRING=Server=tcp:<your-sql-host>,1433;Database=master;User ID=<admin_user>;Password=<password>;Encrypt=True;TrustServerCertificate=False;MultipleActiveResultSets=True
 DATABASE_SEED_ON_STARTUP=false
+DATABASE_INITIALIZE_ON_STARTUP=true
+DATABASE_CREATE_IF_MISSING=false
 ```
+
+如果正式環境的資料庫與資料表都已由 DBA 先建立，且部署帳號沒有 `master` 權限，維持上面這組即可，不需要改回 `DATABASE_CREATE_IF_MISSING=true`。
 
 ### 沒有 CREATE DATABASE 權限時的最小建表腳本
 

@@ -7,6 +7,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <UserSecretsId>myfirstapp-7f6d09d5-3d2e-4e84-a310-8fcb3db9f1aa</UserSecretsId>
+    <DefaultItemExcludes>$(DefaultItemExcludes);myfirstapp.Tests\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>

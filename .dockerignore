@@ -4,3 +4,5 @@ obj/
 .git/
 .gitignore
 README.md
+data/
+appsettings.Secrets.json

@@ -7,11 +7,18 @@ namespace MyFirstApp.Configuration;
 /// </summary>
 public sealed class DatabaseSettings
 {
-    private DatabaseSettings(string connectionString, bool seedOnStartup, string masterConnectionString)
+    private DatabaseSettings(
+        string connectionString,
+        bool seedOnStartup,
+        string masterConnectionString,
+        bool initializeOnStartup,
+        bool createDatabaseIfMissing)
     {
         ConnectionString = connectionString;
         SeedOnStartup = seedOnStartup;
         MasterConnectionString = masterConnectionString;
+        InitializeOnStartup = initializeOnStartup;
+        CreateDatabaseIfMissing = createDatabaseIfMissing;
     }
 
     /// <summary>
@@ -28,6 +35,16 @@ public sealed class DatabaseSettings
     /// Gets a value indicating whether seed data should be inserted on startup.
     /// </summary>
     public bool SeedOnStartup { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether startup should run database initialization.
+    /// </summary>
+    public bool InitializeOnStartup { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether startup should create the database when it is missing.
+    /// </summary>
+    public bool CreateDatabaseIfMissing { get; }
 
     /// <summary>
     /// Builds a validated <see cref="DatabaseSettings"/> instance from layered configuration.
@@ -61,7 +78,30 @@ public sealed class DatabaseSettings
             return false;
         }
 
-        settings = new DatabaseSettings(connectionString, seedOnStartup, masterConnectionString);
+        string? initializeOnStartupText = configuration["DATABASE_INITIALIZE_ON_STARTUP"] ?? configuration["Database:InitializeOnStartup"];
+        bool initializeOnStartup = true;
+        if (!string.IsNullOrWhiteSpace(initializeOnStartupText) && !bool.TryParse(initializeOnStartupText, out initializeOnStartup))
+        {
+            settings = null;
+            errorMessage = "Database:InitializeOnStartup 必須是 true 或 false。";
+            return false;
+        }
+
+        string? createDatabaseIfMissingText = configuration["DATABASE_CREATE_IF_MISSING"] ?? configuration["Database:CreateDatabaseIfMissing"];
+        bool createDatabaseIfMissing = true;
+        if (!string.IsNullOrWhiteSpace(createDatabaseIfMissingText) && !bool.TryParse(createDatabaseIfMissingText, out createDatabaseIfMissing))
+        {
+            settings = null;
+            errorMessage = "Database:CreateDatabaseIfMissing 必須是 true 或 false。";
+            return false;
+        }
+
+        settings = new DatabaseSettings(
+            connectionString,
+            seedOnStartup,
+            masterConnectionString,
+            initializeOnStartup,
+            createDatabaseIfMissing);
         errorMessage = null;
         return true;
     }
