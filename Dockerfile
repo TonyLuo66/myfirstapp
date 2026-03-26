@@ -14,6 +14,7 @@ RUN dotnet publish myfirstapp.csproj -c Release -o out --no-restore
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 ENV ASPNETCORE_URLS=http://+:8080
+ENV TZ=Asia/Taipei
 EXPOSE 8080
 COPY --from=build /app/out .
 

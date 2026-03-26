@@ -1,6 +1,7 @@
 bin/
 obj/
 .vs/
+data/
 
 *.user
 *.suo
@@ -8,3 +9,4 @@ obj/
 *.sln.docstates
 
 *.rsuser
+appsettings.Secrets.json

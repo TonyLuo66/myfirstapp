@@ -1,4 +1,11 @@
-internal sealed class AppSettings
+using Microsoft.Extensions.Configuration;
+
+namespace MyFirstApp.Configuration;
+
+/// <summary>
+/// Represents runtime configuration sourced from environment variables and startup arguments.
+/// </summary>
+public sealed class AppSettings
 {
 	private AppSettings(
 		string appName,
@@ -16,43 +23,74 @@ internal sealed class AppSettings
 		HeartbeatSeconds = heartbeatSeconds;
 	}
 
+	/// <summary>
+	/// Gets the application display name.
+	/// </summary>
 	public string AppName { get; }
 
+	/// <summary>
+	/// Gets the application environment name.
+	/// </summary>
 	public string AppEnvironment { get; }
 
+	/// <summary>
+	/// Gets the optional custom message.
+	/// </summary>
 	public string? AppMessage { get; }
 
+	/// <summary>
+	/// Gets the configured execution mode.
+	/// </summary>
 	public string RunMode { get; }
 
+	/// <summary>
+	/// Gets the source of the configured execution mode.
+	/// </summary>
 	public string RunModeSource { get; }
 
+	/// <summary>
+	/// Gets the heartbeat interval in seconds.
+	/// </summary>
 	public int HeartbeatSeconds { get; }
 
+	/// <summary>
+	/// Gets a value indicating whether background heartbeat processing is enabled.
+	/// </summary>
 	public bool IsLongRunning => RunMode is "watch" or "loop" or "service";
 
-	public static bool TryCreate(string[] args, out AppSettings? settings, out string? errorMessage)
+	/// <summary>
+	/// Builds a validated <see cref="AppSettings"/> instance from layered configuration and arguments.
+	/// </summary>
+	/// <param name="configuration">The application configuration root.</param>
+	/// <param name="environmentName">The host environment name.</param>
+	/// <param name="args">Startup arguments.</param>
+	/// <param name="settings">The parsed settings instance when parsing succeeds.</param>
+	/// <param name="errorMessage">The validation error message when parsing fails.</param>
+	/// <returns><c>true</c> when parsing succeeds; otherwise, <c>false</c>.</returns>
+	public static bool TryCreate(IConfiguration configuration, string environmentName, string[] args, out AppSettings? settings, out string? errorMessage)
 	{
-		var appName = Environment.GetEnvironmentVariable("APP_NAME");
+		string? appName = configuration["APP_NAME"] ?? configuration["App:Name"];
 		if (string.IsNullOrWhiteSpace(appName))
 		{
 			appName = "My First Container App";
 		}
 
-		var appEnvironment = Environment.GetEnvironmentVariable("APP_ENVIRONMENT") ?? "local";
-		var appMessage = Environment.GetEnvironmentVariable("APP_MESSAGE");
-		var configuredRunMode = Environment.GetEnvironmentVariable("APP_MODE");
-		var requestedMode = args.Length > 0 ? args[0] : configuredRunMode;
-		var runModeSource = args.Length > 0 ? "args" : string.IsNullOrWhiteSpace(configuredRunMode) ? "default" : "APP_MODE";
+		string appEnvironment = configuration["APP_ENVIRONMENT"]
+			?? configuration["App:Environment"]
+			?? environmentName;
+		string? appMessage = configuration["APP_MESSAGE"] ?? configuration["App:Message"];
+		string? configuredRunMode = configuration["APP_MODE"] ?? configuration["App:RunMode"];
+		string? requestedMode = args.Length > 0 ? args[0] : configuredRunMode;
+		string runModeSource = args.Length > 0 ? "args" : string.IsNullOrWhiteSpace(configuredRunMode) ? "default" : "configuration";
 
-		if (!TryParseRunMode(requestedMode, out var runMode, out errorMessage))
+		if (!TryParseRunMode(requestedMode, out string runMode, out errorMessage))
 		{
 			settings = null;
 			return false;
 		}
 
-		var heartbeatSecondsText = Environment.GetEnvironmentVariable("HEARTBEAT_SECONDS");
-		var heartbeatSeconds = 5;
-
+		string? heartbeatSecondsText = configuration["HEARTBEAT_SECONDS"] ?? configuration["App:HeartbeatSeconds"];
+		int heartbeatSeconds = 5;
 		if (!string.IsNullOrWhiteSpace(heartbeatSecondsText))
 		{
 			if (!int.TryParse(heartbeatSecondsText, out heartbeatSeconds) || heartbeatSeconds <= 0)

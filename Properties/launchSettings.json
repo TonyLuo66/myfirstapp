@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "myfirstapp-http": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "applicationUrl": "http://localhost:5070",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "APP_MODE": "service",
+        "APP_MESSAGE": "由 launchSettings 啟動的開發模式",
+        "HEARTBEAT_SECONDS": "2"
+      }
+    },
+    "myfirstapp-safe": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "applicationUrl": "http://localhost:5071",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "APP_MODE": "once",
+        "APP_MESSAGE": "不啟用 heartbeat 的開發模式"
+      }
+    }
+  }
+}
