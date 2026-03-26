@@ -10,9 +10,11 @@ RUN dotnet restore myfirstapp.csproj
 COPY . ./
 RUN dotnet publish myfirstapp.csproj -c Release -o out --no-restore
 
-# 4. 為了讓 Image 體積變小，最終階段只使用 Runtime (執行環境)
-FROM mcr.microsoft.com/dotnet/runtime:10.0
+# 4. Web App 需要 ASP.NET Core Runtime 才能提供 HTTP 服務
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
 COPY --from=build /app/out .
 
 # 5. 設定容器啟動時，要執行的指令
