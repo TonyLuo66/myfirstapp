@@ -2,6 +2,8 @@ bin/
 obj/
 .vs/
 data/
+myfirstapp-frontend/node_modules/
+myfirstapp-frontend/dist/
 
 *.user
 *.suo

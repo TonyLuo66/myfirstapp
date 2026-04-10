@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Console;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 using MyFirstApp.BackgroundServices;
 using MyFirstApp.Business.Interfaces;
@@ -30,6 +31,7 @@ ILoggerFactory bootstrapLoggerFactory = LoggerFactory.Create(logging =>
 });
 
 ILogger bootstrapLogger = bootstrapLoggerFactory.CreateLogger("Startup");
+const string FrontendCorsPolicy = "FrontendClient";
 
 try
 {
@@ -58,6 +60,17 @@ try
 
     AppSettings appSettings = settings!;
     DatabaseSettings dbSettings = databaseSettings!;
+    string[] defaultAllowedOrigins = builder.Environment.IsDevelopment()
+        ? new[] { "http://localhost:5173", "https://localhost:5173" }
+        : Array.Empty<string>();
+    string[] configuredOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+        ?.Where(origin => !string.IsNullOrWhiteSpace(origin))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray()
+        ?? Array.Empty<string>();
+    string[] allowedOrigins = configuredOrigins.Length > 0
+        ? configuredOrigins
+        : defaultAllowedOrigins;
 
     builder.Services.AddSingleton(appSettings);
     builder.Services.AddSingleton(dbSettings);
@@ -72,6 +85,15 @@ try
     builder.Services.AddScoped<ISystemStatusService, SystemStatusService>();
     builder.Services.AddScoped<ISystemStatusQueryValidator, SystemStatusQueryValidator>();
     builder.Services.AddHostedService<HeartbeatBackgroundService>();
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy(FrontendCorsPolicy, policy =>
+        {
+            policy.WithOrigins(allowedOrigins)
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        });
+    });
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(options =>
@@ -92,6 +114,15 @@ try
     });
 
     WebApplication app = builder.Build();
+    string deployedFrontendRoot = app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+    string localFrontendRoot = Path.Combine(app.Environment.ContentRootPath, "myfirstapp-frontend", "dist");
+    string? frontendRootPath = File.Exists(Path.Combine(deployedFrontendRoot, "index.html"))
+        ? deployedFrontendRoot
+        : File.Exists(Path.Combine(localFrontendRoot, "index.html"))
+            ? localFrontendRoot
+            : null;
+    bool hasFrontendBuild = frontendRootPath is not null;
+    PhysicalFileProvider? frontendFileProvider = hasFrontendBuild ? new PhysicalFileProvider(frontendRootPath!) : null;
 
     using (IServiceScope scope = app.Services.CreateScope())
     {
@@ -109,15 +140,42 @@ try
 
     app.UseMiddleware<ExceptionHandlingMiddleware>();
     app.UseMiddleware<RequestLoggingMiddleware>();
+    if (allowedOrigins.Length > 0)
+    {
+        app.UseCors(FrontendCorsPolicy);
+    }
+
+    if (hasFrontendBuild)
+    {
+        app.UseDefaultFiles(new DefaultFilesOptions
+        {
+            FileProvider = frontendFileProvider
+        });
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = frontendFileProvider
+        });
+    }
+
     app.UseSwagger();
     app.UseSwaggerUI();
 
-    app.MapGet("/", ([FromServices] ISystemStatusService systemStatusService) =>
+    app.MapGet("/legacy-home", ([FromServices] ISystemStatusService systemStatusService) =>
     {
         SystemStatusDto status = systemStatusService.GetSystemStatus(new SystemStatusQueryDto());
         string html = HomePageRenderer.Render(status);
         return Results.Content(html, "text/html; charset=utf-8");
     });
+
+    if (!hasFrontendBuild)
+    {
+        app.MapGet("/", ([FromServices] ISystemStatusService systemStatusService) =>
+        {
+            SystemStatusDto status = systemStatusService.GetSystemStatus(new SystemStatusQueryDto());
+            string html = HomePageRenderer.Render(status);
+            return Results.Content(html, "text/html; charset=utf-8");
+        });
+    }
 
     app.MapGet("/health", ([FromServices] ISystemStatusService systemStatusService) =>
     {
@@ -132,6 +190,14 @@ try
     });
 
     app.MapControllers();
+
+    if (hasFrontendBuild)
+    {
+        app.MapFallbackToFile("index.html", new StaticFileOptions
+        {
+            FileProvider = frontendFileProvider
+        });
+    }
 
     await app.RunAsync();
 }

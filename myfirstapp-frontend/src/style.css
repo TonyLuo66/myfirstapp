@@ -1,0 +1,274 @@
+:root {
+  color-scheme: light;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #182126;
+  background:
+    radial-gradient(circle at top left, rgba(30, 136, 117, 0.16), transparent 28%),
+    linear-gradient(135deg, #f4efe6 0%, #d8e8e4 48%, #f7f3ed 100%);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 100vh;
+}
+
+.app-sidebar {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 32px 24px;
+  border-right: 1px solid rgba(24, 33, 38, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px);
+}
+
+.app-kicker,
+.eyebrow {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #0f766e;
+}
+
+.app-sidebar h1,
+.panel h2,
+.panel h3 {
+  margin: 0;
+}
+
+.app-copy {
+  color: #50606d;
+}
+
+.app-nav {
+  display: grid;
+  gap: 12px;
+}
+
+.app-link {
+  padding: 14px 16px;
+  border-radius: 16px;
+  text-decoration: none;
+  color: #1a2d33;
+  background: rgba(15, 118, 110, 0.08);
+  border: 1px solid rgba(15, 118, 110, 0.08);
+}
+
+.app-link.router-link-active {
+  color: white;
+  background: linear-gradient(135deg, #0f766e 0%, #124559 100%);
+}
+
+.app-main {
+  padding: 28px;
+}
+
+.page-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.hero-panel {
+  grid-column: span 3;
+}
+
+.profiles-layout {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
+}
+
+.detail-column {
+  display: grid;
+  gap: 20px;
+}
+
+.panel {
+  padding: 24px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(24, 33, 38, 0.08);
+  box-shadow: 0 18px 45px rgba(31, 49, 58, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.hero-copy,
+.metric-panel p,
+.empty-panel p {
+  color: #50606d;
+}
+
+.panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.search-box,
+.form-grid input,
+.form-grid select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(24, 33, 38, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.search-box {
+  min-width: 220px;
+}
+
+.primary-button,
+.ghost-button {
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: none;
+}
+
+.primary-button {
+  color: white;
+  background: linear-gradient(135deg, #0f766e 0%, #124559 100%);
+}
+
+.ghost-button {
+  color: #124559;
+  background: rgba(18, 69, 89, 0.08);
+}
+
+.table-wrap {
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 14px 10px;
+  text-align: left;
+  border-bottom: 1px solid rgba(24, 33, 38, 0.08);
+}
+
+tbody tr {
+  cursor: pointer;
+}
+
+tbody tr.selected,
+tbody tr:hover {
+  background: rgba(15, 118, 110, 0.08);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.detail-grid dt {
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #62727f;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.detail-grid dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.form-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.form-grid label {
+  display: grid;
+  gap: 8px;
+}
+
+.checkbox-row {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+}
+
+.checkbox-row input {
+  width: auto;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.error-text {
+  color: #b42318;
+  font-weight: 600;
+}
+
+@media (max-width: 1100px) {
+  .app-shell,
+  .profiles-layout,
+  .page-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-panel {
+    grid-column: span 1;
+  }
+
+  .app-sidebar {
+    border-right: none;
+    border-bottom: 1px solid rgba(24, 33, 38, 0.08);
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}

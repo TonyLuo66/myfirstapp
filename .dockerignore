@@ -6,3 +6,5 @@ obj/
 README.md
 data/
 appsettings.Secrets.json
+myfirstapp-frontend/node_modules/
+myfirstapp-frontend/dist/

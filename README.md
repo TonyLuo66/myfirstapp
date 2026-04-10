@@ -6,10 +6,11 @@
 
 - Render 部署說明: docs/RENDER_DEPLOYMENT.md
 - 正式交接發布說明: docs/RELEASE_HANDOVER.md
+- 前端專案說明: myfirstapp-frontend/README.md
 
 ## 功能概覽
 
-- 提供首頁、Swagger、健康檢查與 JSON 狀態頁面
+- 提供 Vue 單頁前端、Swagger、健康檢查與 JSON 狀態頁面
 - 提供以 Dapper + Query/Command Repository 查詢 SQL Server 的範例 API
 - 可透過環境變數或命令列參數控制 heartbeat 是否啟用
 - API 採用統一回傳格式: rtnCode、rtnMsg、data
@@ -52,6 +53,32 @@
 如果 APP_MODE 或命令列參數給了不支援的值，程式會直接結束並回傳非 0 exit code。
 
 ## 本機執行
+
+### 前端專案
+
+工作區已新增獨立前端專案 `myfirstapp-frontend`，使用 Vue 3 + TypeScript + Vite，主要對接以下 API：
+
+- `/api/system-status`
+- `/api/system-status/health`
+- `/api/application-profiles`
+- `/api/application-profiles/{profileKey}`
+
+本機串接流程：
+
+1. 先啟動後端：`dotnet run --launch-profile myfirstapp-http`
+2. 再進前端資料夾執行：`npm install`
+3. 啟動前端：`npm run dev`
+4. 開啟：`http://localhost:5173`
+
+若前後端分開部署，請設定前端 `.env` 的 `VITE_API_BASE_URL`，並同步調整後端 `Cors:AllowedOrigins`。
+
+若使用 Docker 部署，前端會在 Docker build 階段自動建置並複製到後端 `wwwroot`，因此容器啟動後：
+
+- `/` 會直接回 Vue 前端
+- `/profiles` 之類的 SPA 路由會由 fallback 轉回前端入口
+- 舊版伺服器端 HTML 首頁改保留在 `/legacy-home`
+
+若你要獨立部署前端，Production 環境請務必在 `Cors:AllowedOrigins` 明確填入前端網址；未設定時，不會再自動 fallback 到 localhost。
 
 ### 已驗證的本機環境
 
